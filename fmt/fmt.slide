@@ -1,0 +1,214 @@
+Unexpected fmt
+
+19 Jul 2018
+
+Shilovskaya Katerina
+Go developer, iTechArt
+K.Shylouskaya@itechart-group.com
+
+
+* fumpt
+
+not "ef-em-tee" or "format"
+
+Documentation in doc.go
+
+* Content
+
+- Verbs and flags
+- Scanning
+- Interfaces
+
+*  Verbs
+
+- general
+- boolean
+- integer
+- float and complex
+- slice of bytes
+
+* General
+
+%v - default format (%+v - field names for structs)
+%#v - Go-syntax representation of the value (copy/paste).
+
+ type animal struct {
+ 	name string
+ }
+
+ func main() {
+ 	cat := animal{"cat"}
+
+ 	fmt.Printf("%v\n", cat)  // {cat}
+ 	fmt.Printf("%+v\n", cat) // {name:cat}
+ 	fmt.Printf("%#v\n", cat) // main.animal{name:"cat"}
+ }
+
+
+Value should implements GoStringer interface to use own Go syntax representation.
+
+* General
+%T - prints your variable’s type.
+
+  var i interface{}
+  i = 5
+  fmt.Printf("%v %[1]T\n", i) // 5 int
+
+%% - esacpes % sign.
+
+* Boolean
+%t - the word true or false
+
+ fmt.Printf("%t %t", true, false) // true false
+
+* Integer
+
+ i := 55
+ fmt.Printf("%b %[1]d %[1]o", i)
+ // 110111 55 67
+
+ i = 666
+ fmt.Printf("%x %[1]X", i)
+ // 29a 29A
+
+ i = 666
+ fmt.Printf("%c %[1]U", i)
+ // ʚ U+029A
+
+ fmt.Printf("%q", i)
+ // 'ʚ'
+
+Flags
+
+  fmt.Printf("%+d %+d\n", 1, -2)
+  // +1 -2
+
+* Float
+
+%e - exponent.
+
+ 1.234456e+78
+%f - no exponent.
+
+ 123.456
+%g - %e for large exponents, %f otherwise
+
+* Width & precision
+
+  %f     default width, default precision
+  %.2f   default width, precision 2
+  %9.f   width 9, precision 0
+
+  fmt.Printf("%.2f", 100.567)
+  // 100.57
+  fmt.Printf("%8.2f", 100.567)
+  //   100.57
+
+Left alignment
+
+  fmt.Printf("%-8.2f", 100.567)
+  // 100.57
+
+Zero padding
+
+  %08d ➡ "00000123"
+
+* String and slice of bytes
+
+Spacing
+
+  b := []byte{1, 234, 3}
+	fmt.Printf("%x\n", b)  // 01ea03
+	fmt.Printf("% x\n", b) // 01 ea 03
+
+Quoted string
+
+  a := "string some Привет \u200b"
+  fmt.Println(a)         // string some Привет ​
+  fmt.Printf("%q\n", a)  // "string some Привет \u200b"
+  fmt.Printf("%+q\n", a) // "string some \u041f\u0440\u0438\u0432\u0435\u0442 \u200b"
+
+* Pointer
+%p -base16 with leading 0x.
+
+* Flags. Indexes:
+
+ fmt.Sprintf("%[2]d %[1]d\n", 11, 22)
+ // 12 11
+
+ fmt.Sprintf("%[3]*.[2]*[1]f", 12.0, 2, 6)
+ // equivalent to fmt.Sprintf("%6.2f", 12.0)
+
+ // resetting the Indexes
+ fmt.Sprintf("%d %d %#[1]x %#x", 16, 17)
+ // 16 17 0x10 0x11
+
+* Scanning
+- STDIN
+- io.Reader
+- String
+
+  var name string
+  var age int
+  if _, err := fmt.Scan(&name, &age); err != nil {
+          log.Fatalf(err)
+  }
+  fmt.Printf("Your name is: %s\n", name)
+  fmt.Printf("Your age is: %d\n", age)
+
+* Interfaces
+
+- Stringer
+- GoStringer
+- Formatter
+- Scanner
+
+* Stringer
+
+.play stringer.go
+
+* Formatter
+Ex. big.Float, big.Int
+
+  type Formatter interface {
+          Format(f State, c rune)
+  }
+
+* Example
+
+.play formatter.go /START OMIT/,/END OMIT/
+
+* Scanner
+
+  type Scanner interface {
+          Scan(state ScanState, verb rune) error
+  }
+
+* Order for Interfaces:
+Exc: %T, %p
+
+1. reflect.Value: operand is replaced by the concrete value.
+
+2. Formatter.
+
+3. If %#v -> GoStringer.
+
+If format is valid for a string (%s %q %v %x %X):
+
+4. error interface -> Error method + formatting.
+
+5. method String() string + formatting.
+
+* Review
+- “fumpt”!
+- %v if you don’t need formatting options
+- use width & precision especially for floating-point numbers
+- Don’t use Scan functions in general. There’s probably a better method of user input
+- implements Stringer
+- Don’t use custom formatters & scanners. There’s not a lot of good use cases unless you’re implementing mathematical types.
+- Don’t use fmt if you’ve found it to be a performance bottleneck. Drop down to strconv when you need to optimize. However, only do this after profiling!
+
+* Links
+- [[https://medium.com/go-walkthrough/go-walkthrough-fmt-55a14bbbfc53][medium: Go Walkthrough fmt]]
+- [[https://golang.org/pkg/fmt/][fmt documentation]]
+- [[https://golang.org/src/math/big/ftoa.go][big.Float format realization]]
